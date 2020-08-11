@@ -7,12 +7,11 @@ import pandas as pd
 import base64
 import sklearn
 import zipfile
-# import matplotlib.pyplot as plt
-# import seaborn as sns
+import matplotlib.pyplot as plt
+import seaborn as sns
 from zipfile import ZipFile
-from sklearn.neighbors import NearestNeighbors
+from sklearn.neighbors import NearestNeighbors, BallTree
 from sklearn.preprocessing import LabelEncoder
-
 
 def ajusta_arquivo_principal(mercado):
     ## CRIANDO UM DF A PARTIR DAS FEATURES SELECIONADAS DURANTE A ANÁLISE EXPLORATÓRIA
@@ -77,7 +76,6 @@ def ajusta_arquivo_principal(mercado):
 
     return dados
 
-
 def preprocessa_dados(dados):
     # instanciando o LabelEncoder
     le = LabelEncoder()
@@ -91,12 +89,10 @@ def preprocessa_dados(dados):
     X[categorical_cols] = X[categorical_cols].apply(lambda col: le.fit_transform(col))
     return X
 
-
 def cria_modelo():
     # cria o modelo
-    nn = NearestNeighbors()
+    nn = NearestNeighbors(n_jobs=-1)
     return nn
-
 
 def ajusta_portfolio(lista_clientes, base):
     portfolio = lista_clientes[['id']]
@@ -119,7 +115,7 @@ def busca_recomendacoes(portfolio, modelo, X,dados):
         'https://i.pinimg.com/originals/30/72/55/3072558f02be09d1a156ddfb01bd4be4.gif')
     # busca as distâncias e os índices dos vizinhos, tendo o portfolio como parâmetro
     distances, indices = modelo.kneighbors(portfolio)
-    st.write('Estamos criando um arquivo para você... só mais um minutinho...')
+    st.write('Prontinho. Aqui estão suas recomendações.')
 
 
     # cria um df legível com as variáveis originais, usando o dados como padrão
@@ -197,21 +193,49 @@ def main():
         portfolio = ajusta_portfolio(lista_clientes, base)
 
         leads = busca_recomendacoes(portfolio, modelo, X, dados)
+        st.balloons()
+        st.write('Estas são algumas das nossas recomendações')
         st.dataframe(leads.sample(50))
-        st.write('Este é o tamanho de sua lista de recomendações')
+        st.write('Este é o tamanho total de sua lista de recomendações')
         st.write(leads.shape[0])
+
+        st.header('Conheça um pouco mais sobre as empresas recomendadas:')
+        st.write('Segmento da empresa')
+        st.bar_chart(leads.nm_segmento)
+        st.write('Nível de atividade')
+        st.bar_chart(leads.de_nivel_atividade)
+
+
+        st.subheader('Comparativo Portfolio vs Recomendações')
+        sns.set(style="white", palette="muted", color_codes=True)
+
+        # Set up the matplotlib figure
+        f, axes = plt.subplots(2, 2, figsize=(7, 7), sharex=True)
+        sns.despine(left=True)
+
+        # GRÁFICOS - COLUNA 1 PORTFOLIO/ COLUNA 2 - RECOMENDAÇÕES
+        # LINHA 1 - IDADE DA EMPRESA
+        sns.countplot(portfolio.nm_segmento, ax=axes[0, 0])
+        sns.countplot(leads.nm_segmento.sample(len(portfolio)), ax=axes[0, 1])
+
+        # LINHA 2 - SETOR
+
+        sns.countplot(portfolio.de_nivel_atividade, ax=axes[1, 0])
+        sns.countplot(leads.de_nivel_atividade.sample(len(portfolio)), ax=axes[1, 1])
+
+        plt.setp(axes, yticks=[], xticks=[])
+        plt.tight_layout()
+        st.pyplot()
+
 
         def get_table_download_link(df):
             """Generates a link allowing the data in a given panda dataframe to be downloaded
             in:  dataframe
             out: href string
             """
-            csv = df.to_csv(encoding='utf-8')
-            b64 = base64.b64encode(csv.encode())
-            payload = b64.decode()
-            link = "data:text/csv;base64,{payload}"
-            link = link.format(payload=payload)
-            href = f'<a href={link}>Download csv file</a>'
+            csv = df.to_csv(index=False)
+            b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
+            href = f'<a href="data:file/csv;base64,{b64}" download="myleads.csv">Download csv file</a>'
             return href
 
         st.subheader('Salve seu arquivo de recomendações')
