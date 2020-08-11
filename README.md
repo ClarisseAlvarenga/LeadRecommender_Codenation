@@ -37,4 +37,7 @@ Dicionário de variáveis
 https://s3-us-west-1.amazonaws.com/codenation-challenges/ml-leads/features_dictionary.pdf
 
 Análise Exploratória
-https://colab.research.google.com/drive/12Hi-GeEitn7gOWMCFVJl8EbvXSmaBaj0?usp=sharing
+https://github.com/ClarisseAlvarenga/CodeNation-ProjetoPratico
+
+Visite o aplicativo em 
+https://s4a.streamlit.io/ClarisseAlvarenga/LeadRecommender_Codenation/master/ProjetoFinal.py/+/
